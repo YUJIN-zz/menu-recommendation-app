@@ -2,18 +2,13 @@ import os
 import requests
 import streamlit as st
 
-try:
-    from streamlit_geolocation import streamlit_geolocation
-except Exception:
-    streamlit_geolocation = None
-
 
 API_URL = os.getenv("API_URL", "http://localhost:8000/recommend")
 
 
 st.set_page_config(
-    page_title="오늘 뭐 먹고 걸을까?",
-    page_icon="🍽️",
+    page_title="오늘의 식후 코스",
+    page_icon="🌿",
     layout="wide",
 )
 
@@ -22,201 +17,208 @@ st.markdown(
     """
     <style>
     .stApp {
-        background: linear-gradient(135deg, #fff8ed 0%, #f7fff4 45%, #eef7ff 100%);
+        background: linear-gradient(135deg, #f4fbf6 0%, #eef8f0 45%, #f8fff9 100%);
     }
 
     .block-container {
         padding-top: 2rem;
         padding-bottom: 3rem;
-        max-width: 1180px;
+        max-width: 1120px;
     }
 
-    .hero-card {
-        background: linear-gradient(135deg, #ff8a3d 0%, #ffb347 45%, #6abf69 100%);
+    .main-hero {
+        background: linear-gradient(135deg, #14532d 0%, #1f7a3f 50%, #7dbb73 100%);
         padding: 2.2rem 2.4rem;
         border-radius: 28px;
         color: white;
-        box-shadow: 0 18px 40px rgba(255, 138, 61, 0.28);
+        box-shadow: 0 18px 42px rgba(20, 83, 45, 0.22);
         margin-bottom: 1.4rem;
     }
 
+    .hero-label {
+        display: inline-block;
+        padding: 0.42rem 0.78rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        font-size: 0.86rem;
+        font-weight: 700;
+        margin-bottom: 0.85rem;
+    }
+
     .hero-title {
-        font-size: 2.7rem;
+        font-size: 2.55rem;
         font-weight: 900;
+        letter-spacing: -0.045em;
         margin-bottom: 0.45rem;
-        letter-spacing: -0.04em;
     }
 
     .hero-subtitle {
-        font-size: 1.08rem;
-        opacity: 0.96;
+        font-size: 1.05rem;
         line-height: 1.65;
+        opacity: 0.94;
         max-width: 760px;
     }
 
-    .mini-badge {
-        display: inline-block;
-        padding: 0.4rem 0.75rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.23);
-        font-size: 0.88rem;
-        font-weight: 700;
-        margin-bottom: 0.9rem;
+    .panel {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(220, 238, 224, 0.95);
+        border-radius: 26px;
+        padding: 1.45rem;
+        box-shadow: 0 12px 34px rgba(30, 85, 45, 0.08);
+        height: 100%;
     }
 
-    .section-card {
-        background: rgba(255, 255, 255, 0.78);
-        border: 1px solid rgba(255, 255, 255, 0.85);
-        border-radius: 24px;
-        padding: 1.35rem 1.45rem;
-        box-shadow: 0 12px 32px rgba(57, 72, 86, 0.08);
+    .panel-title {
+        font-size: 1.22rem;
+        font-weight: 900;
+        color: #14532d;
+        margin-bottom: 0.3rem;
+    }
+
+    .panel-desc {
+        font-size: 0.92rem;
+        color: #647067;
         margin-bottom: 1rem;
-    }
-
-    .section-title {
-        font-size: 1.15rem;
-        font-weight: 850;
-        color: #263238;
-        margin-bottom: 0.25rem;
-    }
-
-    .section-desc {
-        font-size: 0.9rem;
-        color: #64748b;
-        margin-bottom: 0.8rem;
+        line-height: 1.55;
     }
 
     .result-hero {
-        background: linear-gradient(135deg, #263238 0%, #355c4b 60%, #ff8a3d 100%);
-        color: white;
-        border-radius: 28px;
-        padding: 2rem 2.2rem;
-        box-shadow: 0 18px 42px rgba(38, 50, 56, 0.22);
-        margin-top: 1.2rem;
-        margin-bottom: 1.2rem;
+        background: white;
+        border: 1px solid #dceee0;
+        border-left: 8px solid #1f7a3f;
+        border-radius: 26px;
+        padding: 1.75rem 1.9rem;
+        box-shadow: 0 16px 36px rgba(30, 85, 45, 0.1);
+        margin-top: 1.3rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .result-badge {
+        display: inline-block;
+        background: #e7f6ea;
+        color: #14532d;
+        border-radius: 999px;
+        padding: 0.42rem 0.78rem;
+        font-size: 0.86rem;
+        font-weight: 850;
+        margin-bottom: 0.7rem;
     }
 
     .result-title {
         font-size: 2rem;
         font-weight: 900;
+        color: #123524;
         letter-spacing: -0.04em;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.45rem;
     }
 
-    .result-subtitle {
+    .result-summary {
+        color: #5f6f64;
         font-size: 1rem;
-        opacity: 0.92;
         line-height: 1.65;
     }
 
-    .score-box {
-        background: rgba(255, 255, 255, 0.18);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 22px;
-        padding: 1rem;
+    .score-card {
+        background: linear-gradient(135deg, #14532d 0%, #2e8b57 100%);
+        color: white;
+        border-radius: 24px;
+        padding: 1.25rem;
         text-align: center;
+        box-shadow: 0 14px 32px rgba(20, 83, 45, 0.18);
     }
 
     .score-number {
-        font-size: 2.2rem;
+        font-size: 2.35rem;
         font-weight: 900;
+        margin-bottom: 0.2rem;
     }
 
     .score-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
+        font-size: 0.92rem;
+        opacity: 0.92;
     }
 
-    .flow-box {
-        background: white;
+    .flow-card {
+        background: #f2faf4;
+        border: 1px solid #dceee0;
         border-radius: 24px;
-        padding: 1.2rem;
-        box-shadow: 0 12px 28px rgba(57, 72, 86, 0.08);
+        padding: 1.25rem;
         text-align: center;
-        margin-bottom: 1.1rem;
+        color: #14532d;
+        font-weight: 900;
+        font-size: 1.25rem;
+        height: 100%;
     }
 
-    .flow-text {
-        font-size: 1.35rem;
-        font-weight: 850;
-        color: #263238;
+    .chip {
+        display: inline-block;
+        background: #ffffff;
+        border: 1px solid #dbeadd;
+        color: #2f4f3a;
+        border-radius: 999px;
+        padding: 0.45rem 0.78rem;
+        margin: 0.18rem;
+        font-size: 0.87rem;
+        font-weight: 750;
     }
 
     .course-card {
         background: white;
+        border: 1px solid #dceee0;
         border-radius: 26px;
-        padding: 1.35rem 1.35rem;
-        box-shadow: 0 14px 34px rgba(57, 72, 86, 0.1);
-        border: 1px solid rgba(226, 232, 240, 0.85);
-        height: 100%;
+        padding: 1.45rem;
+        box-shadow: 0 14px 34px rgba(30, 85, 45, 0.08);
+        min-height: 330px;
     }
 
-    .course-step {
-        display: inline-block;
-        padding: 0.28rem 0.65rem;
-        border-radius: 999px;
-        background: #fff2df;
-        color: #e56f21;
-        font-weight: 850;
-        font-size: 0.78rem;
-        margin-bottom: 0.65rem;
+    .course-emoji {
+        font-size: 2.2rem;
+        margin-bottom: 0.55rem;
     }
 
     .course-title {
+        color: #14532d;
         font-size: 1.35rem;
         font-weight: 900;
-        color: #263238;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.7rem;
     }
 
-    .keyword-box {
-        background: #f8fafc;
-        padding: 0.85rem;
-        border-radius: 16px;
-        color: #334155;
+    .menu-box {
+        background: #f4fbf6;
+        border-radius: 18px;
+        border: 1px solid #dceee0;
+        padding: 0.9rem;
+        color: #26382c;
         font-weight: 800;
-        margin: 0.75rem 0;
+        line-height: 1.55;
+        margin-bottom: 0.9rem;
     }
 
     .reason-text {
-        color: #64748b;
+        color: #637468;
         line-height: 1.65;
         font-size: 0.94rem;
-        min-height: 6rem;
-    }
-
-    .summary-chip {
-        display: inline-block;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 999px;
-        padding: 0.45rem 0.75rem;
-        margin: 0.2rem;
-        color: #334155;
-        font-size: 0.88rem;
-        font-weight: 700;
     }
 
     div.stButton > button:first-child {
         border-radius: 18px;
         height: 3.2rem;
-        font-weight: 850;
+        font-weight: 900;
         font-size: 1.02rem;
-        background: linear-gradient(135deg, #ff8a3d 0%, #ffb347 100%);
+        background: linear-gradient(135deg, #14532d 0%, #2e8b57 100%);
         border: none;
-        box-shadow: 0 10px 24px rgba(255, 138, 61, 0.25);
+        box-shadow: 0 12px 26px rgba(20, 83, 45, 0.2);
     }
 
     div.stButton > button:first-child:hover {
         transform: translateY(-1px);
-        box-shadow: 0 14px 28px rgba(255, 138, 61, 0.34);
+        box-shadow: 0 16px 30px rgba(20, 83, 45, 0.28);
     }
 
-    div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.78);
-        padding: 1rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 26px rgba(57, 72, 86, 0.08);
+    div[data-testid="stSelectbox"] label,
+    div[data-testid="stRadio"] label {
+        color: #123524;
+        font-weight: 750;
     }
     </style>
     """,
@@ -226,12 +228,12 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="hero-card">
-        <div class="mini-badge">Streamlit + FastAPI + Docker + AWS EC2</div>
-        <div class="hero-title">🍽️ 오늘 뭐 먹고 걸을까?</div>
+    <div class="main-hero">
+        <div class="hero-label">Streamlit + FastAPI + Docker + AWS EC2</div>
+        <div class="hero-title">🌿 오늘의 식후 코스</div>
         <div class="hero-subtitle">
-            현재 위치와 식사 취향을 바탕으로 식당, 카페, 산책 코스를 하나의 흐름으로 추천하는
-            위치 기반 식후 코스 추천 웹 애플리케이션입니다.
+            식사 유형, 건강 목표, 디저트 취향, 허기짐 정도를 바탕으로
+            식사부터 디저트, 식후 루틴까지 한 번에 추천하는 맞춤형 코스 추천 서비스입니다.
         </div>
     </div>
     """,
@@ -239,53 +241,16 @@ st.markdown(
 )
 
 
-left_col, right_col = st.columns([0.92, 1.08], gap="large")
+input_col1, input_col2 = st.columns(2, gap="large")
 
-with left_col:
+with input_col1:
     st.markdown(
         """
-        <div class="section-card">
-            <div class="section-title">📍 Step 1. 오늘의 출발지</div>
-            <div class="section-desc">현재 위치를 허용하거나 직접 지역명을 입력하세요.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    location_data = None
-    latitude = None
-    longitude = None
-
-    with st.expander("현재 위치 허용하기", expanded=False):
-        st.write("브라우저에서 위치 권한을 허용하면 현재 위치 좌표를 추천 요청에 함께 보낼 수 있습니다.")
-
-        if streamlit_geolocation is not None:
-            location_data = streamlit_geolocation()
-
-            if location_data:
-                latitude = location_data.get("latitude")
-                longitude = location_data.get("longitude")
-
-                if latitude and longitude:
-                    st.success(f"현재 위치 확인 완료: 위도 {latitude}, 경도 {longitude}")
-                else:
-                    st.warning("위치 권한이 허용되지 않았거나 위치 정보를 가져오지 못했습니다.")
-            else:
-                st.info("위치 기능이 작동하지 않으면 아래에 직접 지역명을 입력하세요.")
-        else:
-            st.warning("현재 위치 컴포넌트를 불러오지 못했습니다. 직접 지역명을 입력하세요.")
-
-    location_text = st.text_input(
-        "지역명",
-        value="광운대",
-        placeholder="예: 광운대, 수유역, 강남역, 성수동"
-    )
-
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-title">🍚 Step 2. 오늘의 식사 취향</div>
-            <div class="section-desc">식사 유형, 건강 목표, 허기짐 정도를 선택하세요.</div>
+        <div class="panel">
+            <div class="panel-title">🍚 식사 취향</div>
+            <div class="panel-desc">
+                오늘 먹고 싶은 식사 유형과 건강 목표를 선택하세요.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -307,12 +272,14 @@ with left_col:
         horizontal=True
     )
 
-with right_col:
+with input_col2:
     st.markdown(
         """
-        <div class="section-card">
-            <div class="section-title">☕ Step 3. 식후 디저트 취향</div>
-            <div class="section-desc">식사 후 어떤 디저트를 먹고 싶은지 선택하세요.</div>
+        <div class="panel">
+            <div class="panel-title">☕ 식후 취향</div>
+            <div class="panel-desc">
+                디저트, 동행, 분위기, 산책 시간을 선택하세요.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -321,16 +288,6 @@ with right_col:
     dessert_type = st.selectbox(
         "선호하는 디저트 유형",
         ["커피", "베이커리", "저당 음료", "아이스크림", "과일/요거트"]
-    )
-
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-title">👥 Step 4. 오늘의 식사 분위기</div>
-            <div class="section-desc">동행 유형과 원하는 분위기를 선택하세요.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
     )
 
     companion = st.selectbox(
@@ -343,32 +300,19 @@ with right_col:
         ["조용한 곳", "가성비 좋은 곳", "사진 찍기 좋은 곳", "든든한 한 끼", "건강한 느낌", "편하게 오래 머물 수 있는 곳"]
     )
 
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-title">🚶 Step 5. 식후 산책 루틴</div>
-            <div class="section-desc">식사 후 걸을 수 있는 시간을 선택하세요.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     walk_time = st.selectbox(
         "식사 후 산책 가능시간",
         ["0분", "10분", "20분", "30분 이상"]
     )
 
 
-st.markdown("---")
+st.markdown("")
 
-recommend_button = st.button("✨ 오늘의 맞춤 코스 추천받기", use_container_width=True)
+recommend_button = st.button("🌿 오늘의 식후 코스 추천받기", use_container_width=True)
 
 
 if recommend_button:
     payload = {
-        "location_text": location_text,
-        "latitude": latitude,
-        "longitude": longitude,
         "meal_type": meal_type,
         "health_goal": health_goal,
         "dessert_type": dessert_type,
@@ -388,9 +332,9 @@ if recommend_button:
             st.markdown(
                 f"""
                 <div class="result-hero">
-                    <div class="mini-badge">{result['course_badge']}</div>
-                    <div class="result-title">✨ {result['course_title']}</div>
-                    <div class="result-subtitle">{result['course_summary']}</div>
+                    <div class="result-badge">{result['course_badge']}</div>
+                    <div class="result-title">{result['course_title']}</div>
+                    <div class="result-summary">{result['course_summary']}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -399,16 +343,21 @@ if recommend_button:
             score_col, flow_col = st.columns([0.32, 0.68], gap="medium")
 
             with score_col:
-                st.metric(
-                    label="오늘의 코스 적합도",
-                    value=f"{result['recommendation_score']}점"
+                st.markdown(
+                    f"""
+                    <div class="score-card">
+                        <div class="score-number">{result['recommendation_score']}점</div>
+                        <div class="score-label">오늘의 코스 적합도</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
             with flow_col:
                 st.markdown(
                     """
-                    <div class="flow-box">
-                        <div class="flow-text">🍚 식사 → ☕ 디저트 → 🚶 산책</div>
+                    <div class="flow-card">
+                        🍚 식사 &nbsp; → &nbsp; ☕ 디저트 &nbsp; → &nbsp; 🌿 식후 루틴
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -416,24 +365,23 @@ if recommend_button:
 
             summary = result["input_summary"]
 
-            st.markdown("### 📌 입력 요약")
+            st.markdown("### 선택한 조건")
             st.markdown(
                 f"""
                 <div>
-                    <span class="summary-chip">📍 {summary['location']}</span>
-                    <span class="summary-chip">🍚 {summary['meal_type']}</span>
-                    <span class="summary-chip">🎯 {summary['health_goal']}</span>
-                    <span class="summary-chip">☕ {summary['dessert_type']}</span>
-                    <span class="summary-chip">🔥 {summary['hunger_level']}</span>
-                    <span class="summary-chip">👥 {summary['companion']}</span>
-                    <span class="summary-chip">✨ {summary['mood']}</span>
-                    <span class="summary-chip">🚶 {summary['walk_time']}</span>
+                    <span class="chip">🍚 {summary['meal_type']}</span>
+                    <span class="chip">🎯 {summary['health_goal']}</span>
+                    <span class="chip">☕ {summary['dessert_type']}</span>
+                    <span class="chip">🔥 {summary['hunger_level']}</span>
+                    <span class="chip">👥 {summary['companion']}</span>
+                    <span class="chip">✨ {summary['mood']}</span>
+                    <span class="chip">🌿 {summary['walk_time']}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            st.markdown("### 🧭 추천 코스")
+            st.markdown("### 추천 결과")
 
             restaurant = result["restaurant"]
             cafe = result["cafe"]
@@ -445,43 +393,40 @@ if recommend_button:
                 st.markdown(
                     f"""
                     <div class="course-card">
-                        <div class="course-step">{restaurant['step']}</div>
-                        <div class="course-title">{restaurant['emoji']} {restaurant['title']}</div>
-                        <div class="keyword-box">{restaurant['search_keyword']}</div>
+                        <div class="course-emoji">{restaurant['emoji']}</div>
+                        <div class="course-title">{restaurant['title']}</div>
+                        <div class="menu-box">{restaurant['menu']}</div>
                         <div class="reason-text">{restaurant['reason']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                st.link_button("네이버 지도에서 식당 보기", restaurant["map_url"], use_container_width=True)
 
             with card2:
                 st.markdown(
                     f"""
                     <div class="course-card">
-                        <div class="course-step">{cafe['step']}</div>
-                        <div class="course-title">{cafe['emoji']} {cafe['title']}</div>
-                        <div class="keyword-box">{cafe['search_keyword']}</div>
+                        <div class="course-emoji">{cafe['emoji']}</div>
+                        <div class="course-title">{cafe['title']}</div>
+                        <div class="menu-box">{cafe['menu']}</div>
                         <div class="reason-text">{cafe['reason']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                st.link_button("네이버 지도에서 카페 보기", cafe["map_url"], use_container_width=True)
 
             with card3:
                 st.markdown(
                     f"""
                     <div class="course-card">
-                        <div class="course-step">{walk['step']}</div>
-                        <div class="course-title">{walk['emoji']} {walk['title']}</div>
-                        <div class="keyword-box">{walk['search_keyword']}</div>
+                        <div class="course-emoji">{walk['emoji']}</div>
+                        <div class="course-title">{walk['title']}</div>
+                        <div class="menu-box">{walk['activity']}</div>
                         <div class="reason-text">{walk['reason']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                st.link_button("네이버 지도에서 산책 코스 보기", walk["map_url"], use_container_width=True)
 
             st.success("추천 결과를 FastAPI에서 받아왔습니다.")
             st.info(result["message"])

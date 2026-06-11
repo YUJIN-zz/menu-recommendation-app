@@ -1,19 +1,15 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from urllib.parse import quote
 
 
 app = FastAPI(
     title="Meal Course Recommendation API",
-    description="식사, 디저트, 산책 코스를 추천하는 FastAPI 백엔드",
+    description="식사 취향과 건강 목표를 바탕으로 식사, 디저트, 산책 코스를 추천하는 API",
     version="1.0.0",
 )
 
 
 class RecommendationRequest(BaseModel):
-    location_text: str
-    latitude: float | None = None
-    longitude: float | None = None
     meal_type: str
     health_goal: str
     dessert_type: str
@@ -23,94 +19,156 @@ class RecommendationRequest(BaseModel):
     walk_time: str
 
 
-def make_naver_map_url(keyword: str) -> str:
-    encoded_keyword = quote(keyword)
-    return f"https://map.naver.com/p/search/{encoded_keyword}"
-
-
-def get_restaurant_keyword(meal_type: str, health_goal: str, hunger_level: str, companion: str, mood: str) -> str:
+def get_restaurant_recommendation(
+    meal_type: str,
+    health_goal: str,
+    hunger_level: str,
+    companion: str,
+    mood: str,
+) -> dict:
     if health_goal == "다이어트 중":
-        if meal_type in ["한식", "샐러드/건강식"]:
-            return "샐러드 건강식 맛집"
-        return f"{meal_type} 저칼로리 맛집"
+        if meal_type in ["샐러드/건강식", "한식"]:
+            title = "가벼운 건강식 식당"
+            menu = "샐러드볼, 닭가슴살 덮밥, 현미 비빔밥"
+        else:
+            title = f"부담 적은 {meal_type} 식당"
+            menu = "저칼로리 메뉴, 구운 단백질 메뉴, 채소 중심 메뉴"
 
-    if health_goal == "단백질 중심":
+    elif health_goal == "단백질 중심":
+        title = "단백질 충전 식당"
         if meal_type == "한식":
-            return "단백질 한식 맛집"
-        if meal_type == "일식":
-            return "연어덮밥 초밥 맛집"
-        if meal_type == "양식":
-            return "스테이크 샐러드 맛집"
-        return f"{meal_type} 단백질 맛집"
+            menu = "제육 없는 백반, 닭갈비, 생선구이 정식"
+        elif meal_type == "일식":
+            menu = "연어덮밥, 초밥, 사케동"
+        elif meal_type == "양식":
+            menu = "스테이크 샐러드, 그릴드 치킨, 포케"
+        else:
+            menu = "고기·계란·두부가 포함된 든든한 메뉴"
 
-    if hunger_level == "매우 배고픔":
-        if meal_type == "한식":
-            return "든든한 한식 맛집"
-        if meal_type == "중식":
-            return "중식 맛집"
-        if meal_type == "분식":
-            return "분식 맛집"
-        return f"{meal_type} 든든한 맛집"
+    elif hunger_level == "매우 배고픔":
+        title = "든든한 한 끼 식당"
+        menu = "덮밥, 국밥, 파스타, 볶음밥처럼 포만감 있는 메뉴"
 
-    if companion == "연인" or mood == "사진 찍기 좋은 곳":
-        return f"{meal_type} 데이트 맛집"
+    elif companion == "연인" or mood == "사진 찍기 좋은 곳":
+        title = "분위기 좋은 식당"
+        menu = "플레이팅이 예쁜 메뉴, 파스타, 스테이크, 정갈한 정식"
 
-    if companion == "가족":
-        return f"{meal_type} 가족식사 맛집"
+    elif companion == "가족":
+        title = "편안한 가족 식사 식당"
+        menu = "한식 정식, 샤브샤브, 중식 요리, 나눠 먹기 좋은 메뉴"
 
-    if mood == "가성비 좋은 곳":
-        return f"{meal_type} 가성비 맛집"
+    elif mood == "가성비 좋은 곳":
+        title = "가성비 좋은 식당"
+        menu = "덮밥, 분식 세트, 백반, 면 요리"
 
-    if mood == "조용한 곳":
-        return f"조용한 {meal_type} 맛집"
+    else:
+        title = f"균형 잡힌 {meal_type} 식당"
+        menu = "탄수화물, 단백질, 채소가 함께 있는 균형식 메뉴"
 
-    return f"{meal_type} 맛집"
+    reason = (
+        f"선호 식사 유형은 '{meal_type}', 건강 목표는 '{health_goal}', "
+        f"허기짐 정도는 '{hunger_level}'입니다. "
+        f"동행 유형 '{companion}'과 원하는 분위기 '{mood}'까지 고려해 "
+        f"식사 만족도와 상황 적합성이 높은 코스를 추천했습니다."
+    )
+
+    return {
+        "title": title,
+        "menu": menu,
+        "reason": reason,
+    }
 
 
-def get_cafe_keyword(dessert_type: str, health_goal: str, mood: str) -> str:
+def get_cafe_recommendation(dessert_type: str, health_goal: str, mood: str) -> dict:
     if health_goal == "다이어트 중":
         if dessert_type == "저당 음료":
-            return "저당 음료 카페"
-        if dessert_type == "과일/요거트":
-            return "그릭요거트 카페"
-        return "건강 디저트 카페"
+            title = "저당 음료 카페"
+            menu = "아메리카노, 무가당 라떼, 저당 티"
+        elif dessert_type == "과일/요거트":
+            title = "가벼운 요거트 카페"
+            menu = "그릭요거트, 과일컵, 무가당 요거트"
+        else:
+            title = "부담 적은 디저트 카페"
+            menu = "작은 사이즈 디저트, 티, 아메리카노"
 
-    if mood == "사진 찍기 좋은 곳":
-        return "감성 카페"
+    elif mood == "사진 찍기 좋은 곳":
+        title = "감성 디저트 카페"
+        menu = "시그니처 음료, 케이크, 크림 라떼"
 
-    if mood == "조용한 곳":
-        return "조용한 카페"
+    elif mood == "조용한 곳":
+        title = "조용히 쉬기 좋은 카페"
+        menu = "따뜻한 차, 아메리카노, 라떼"
 
-    if dessert_type == "커피":
-        return "분위기 좋은 카페"
-    if dessert_type == "베이커리":
-        return "베이커리 카페"
-    if dessert_type == "아이스크림":
-        return "아이스크림 디저트 카페"
-    if dessert_type == "과일/요거트":
-        return "요거트 디저트 카페"
+    elif dessert_type == "베이커리":
+        title = "베이커리 카페"
+        menu = "크루아상, 소금빵, 샌드위치"
 
-    return f"{dessert_type} 카페"
+    elif dessert_type == "아이스크림":
+        title = "달콤한 디저트 카페"
+        menu = "아이스크림, 젤라또, 와플"
+
+    elif dessert_type == "과일/요거트":
+        title = "산뜻한 디저트 카페"
+        menu = "요거트볼, 과일주스, 스무디"
+
+    else:
+        title = "깔끔한 커피 카페"
+        menu = "아메리카노, 라떼, 콜드브루"
+
+    reason = (
+        f"선택한 디저트 유형은 '{dessert_type}'입니다. "
+        f"건강 목표 '{health_goal}'과 원하는 분위기 '{mood}'을 함께 반영해 "
+        f"식사 후 부담 없이 이어갈 수 있는 디저트 코스를 추천했습니다."
+    )
+
+    return {
+        "title": title,
+        "menu": menu,
+        "reason": reason,
+    }
 
 
-def get_walk_keyword(walk_time: str, location_text: str) -> str:
+def get_walk_recommendation(walk_time: str, health_goal: str, mood: str) -> dict:
     if walk_time == "0분":
-        return f"{location_text} 근처"
+        title = "휴식 중심 마무리 코스"
+        activity = "산책 대신 카페나 실내 공간에서 짧게 쉬기"
 
-    if walk_time == "10분":
-        return "가벼운 산책로"
+    elif walk_time == "10분":
+        title = "가벼운 소화 산책 코스"
+        activity = "식당 주변을 천천히 걷는 10분 산책"
 
-    if walk_time == "20분":
-        return "공원 산책로"
+    elif walk_time == "20분":
+        title = "균형 잡힌 식후 산책 코스"
+        activity = "공원이나 조용한 길을 따라 걷는 20분 산책"
 
-    return "걷기 좋은 산책 코스"
+    else:
+        title = "여유로운 리프레시 산책 코스"
+        activity = "식사 후 기분 전환까지 할 수 있는 30분 이상 산책"
+
+    reason = (
+        f"식사 후 산책 가능시간은 '{walk_time}'입니다. "
+        f"건강 목표 '{health_goal}'과 원하는 분위기 '{mood}'을 반영해 "
+        f"식후 부담을 줄이고 자연스럽게 마무리할 수 있는 활동을 추천했습니다."
+    )
+
+    return {
+        "title": title,
+        "activity": activity,
+        "reason": reason,
+    }
 
 
-def calculate_score(health_goal: str, hunger_level: str, companion: str, mood: str, walk_time: str) -> int:
-    score = 78
+def calculate_score(
+    health_goal: str,
+    hunger_level: str,
+    companion: str,
+    mood: str,
+    walk_time: str,
+) -> int:
+    score = 76
 
     if health_goal in ["단백질 중심", "다이어트 중", "균형 잡힌 식사"]:
-        score += 6
+        score += 7
 
     if hunger_level in ["보통", "매우 배고픔"]:
         score += 4
@@ -118,65 +176,34 @@ def calculate_score(health_goal: str, hunger_level: str, companion: str, mood: s
     if companion in ["친구", "연인", "가족"]:
         score += 4
 
-    if mood in ["건강한 느낌", "든든한 한 끼", "사진 찍기 좋은 곳"]:
+    if mood in ["건강한 느낌", "든든한 한 끼", "조용한 곳"]:
         score += 4
 
     if walk_time != "0분":
-        score += 5
+        score += 6
 
     return min(score, 98)
 
 
-def get_course_badge(score: int) -> str:
+def get_badge(score: int) -> str:
     if score >= 92:
-        return "오늘의 강력 추천 코스"
+        return "오늘의 베스트 식후 코스"
     if score >= 86:
         return "균형 잡힌 추천 코스"
     return "가볍게 즐기기 좋은 코스"
-
-
-def make_restaurant_reason(meal_type: str, health_goal: str, hunger_level: str, companion: str, mood: str) -> str:
-    return (
-        f"'{health_goal}' 목표와 '{hunger_level}' 상태를 반영했습니다. "
-        f"또한 동행 유형은 '{companion}', 원하는 분위기는 '{mood}'이므로 "
-        f"식사 만족도와 상황 적합성을 함께 고려해 {meal_type} 계열의 식당을 추천했습니다."
-    )
-
-
-def make_cafe_reason(dessert_type: str, health_goal: str, mood: str) -> str:
-    return (
-        f"식사 후 디저트는 '{dessert_type}' 유형을 기준으로 추천했습니다. "
-        f"건강 목표 '{health_goal}'과 원하는 분위기 '{mood}'을 함께 반영해 "
-        f"식후 부담이 적고 코스 흐름이 자연스러운 카페를 추천했습니다."
-    )
-
-
-def make_walk_reason(walk_time: str) -> str:
-    if walk_time == "0분":
-        return "산책 시간이 없기 때문에 멀리 이동하지 않고 주변에서 마무리할 수 있는 코스를 추천했습니다."
-
-    return (
-        f"식사 후 소화를 돕고 부담 없이 움직일 수 있도록 "
-        f"'{walk_time}' 산책 가능시간에 맞는 코스를 추천했습니다."
-    )
 
 
 @app.get("/")
 def root():
     return {
         "message": "Meal Course Recommendation API is running.",
-        "docs": "/docs"
+        "docs": "/docs",
     }
 
 
 @app.post("/recommend")
 def recommend(data: RecommendationRequest):
-    location = data.location_text.strip()
-
-    if not location:
-        location = "현재 위치"
-
-    restaurant_keyword = get_restaurant_keyword(
+    restaurant = get_restaurant_recommendation(
         data.meal_type,
         data.health_goal,
         data.hunger_level,
@@ -184,22 +211,19 @@ def recommend(data: RecommendationRequest):
         data.mood,
     )
 
-    cafe_keyword = get_cafe_keyword(
+    cafe = get_cafe_recommendation(
         data.dessert_type,
         data.health_goal,
         data.mood,
     )
 
-    walk_keyword = get_walk_keyword(
+    walk = get_walk_recommendation(
         data.walk_time,
-        location,
+        data.health_goal,
+        data.mood,
     )
 
-    restaurant_search = f"{location} {restaurant_keyword}"
-    cafe_search = f"{location} {cafe_keyword}"
-    walk_search = f"{location} {walk_keyword}"
-
-    recommendation_score = calculate_score(
+    score = calculate_score(
         data.health_goal,
         data.hunger_level,
         data.companion,
@@ -207,25 +231,17 @@ def recommend(data: RecommendationRequest):
         data.walk_time,
     )
 
-    course_title = f"{location} {data.health_goal} + {data.dessert_type} + {data.walk_time} 산책 코스"
-    course_badge = get_course_badge(recommendation_score)
-
-    course_summary = (
-        f"{location}에서 {data.meal_type} 식사로 시작해 "
-        f"{data.dessert_type} 디저트와 {data.walk_time} 산책으로 마무리하는 맞춤형 식후 코스입니다."
-    )
-
     result = {
         "message": "추천 결과가 FastAPI에서 JSON 형태로 생성되었습니다.",
-        "course_title": course_title,
-        "course_badge": course_badge,
-        "course_summary": course_summary,
-        "recommendation_score": recommendation_score,
-        "course_flow": "식사 → 디저트 → 산책",
+        "course_title": f"{data.health_goal} 식사 + {data.dessert_type} 디저트 + {data.walk_time} 식후 루틴",
+        "course_badge": get_badge(score),
+        "recommendation_score": score,
+        "course_summary": (
+            f"'{data.meal_type}' 식사 취향을 바탕으로 "
+            f"'{data.health_goal}' 목표, '{data.dessert_type}' 디저트, "
+            f"'{data.walk_time}' 식후 루틴을 조합한 맞춤형 식후 코스입니다."
+        ),
         "input_summary": {
-            "location": location,
-            "latitude": data.latitude,
-            "longitude": data.longitude,
             "meal_type": data.meal_type,
             "health_goal": data.health_goal,
             "dessert_type": data.dessert_type,
@@ -235,41 +251,22 @@ def recommend(data: RecommendationRequest):
             "walk_time": data.walk_time,
         },
         "restaurant": {
-            "step": "STEP 1",
             "emoji": "🍚",
-            "title": "식사 코스",
-            "search_keyword": restaurant_search,
-            "category": data.meal_type,
-            "reason": make_restaurant_reason(
-                data.meal_type,
-                data.health_goal,
-                data.hunger_level,
-                data.companion,
-                data.mood,
-            ),
-            "map_url": make_naver_map_url(restaurant_search),
+            "title": restaurant["title"],
+            "menu": restaurant["menu"],
+            "reason": restaurant["reason"],
         },
         "cafe": {
-            "step": "STEP 2",
             "emoji": "☕",
-            "title": "디저트 코스",
-            "search_keyword": cafe_search,
-            "category": data.dessert_type,
-            "reason": make_cafe_reason(
-                data.dessert_type,
-                data.health_goal,
-                data.mood,
-            ),
-            "map_url": make_naver_map_url(cafe_search),
+            "title": cafe["title"],
+            "menu": cafe["menu"],
+            "reason": cafe["reason"],
         },
         "walk": {
-            "step": "STEP 3",
-            "emoji": "🚶",
-            "title": "식후 산책 코스",
-            "search_keyword": walk_search,
-            "walk_time": data.walk_time,
-            "reason": make_walk_reason(data.walk_time),
-            "map_url": make_naver_map_url(walk_search),
+            "emoji": "🌿",
+            "title": walk["title"],
+            "activity": walk["activity"],
+            "reason": walk["reason"],
         },
     }
 

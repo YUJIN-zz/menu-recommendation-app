@@ -7,8 +7,8 @@ API_URL = os.getenv("API_URL", "http://localhost:8000/recommend")
 
 
 st.set_page_config(
-    page_title="오늘의 식후 코스",
-    page_icon="🌿",
+    page_title="오늘의 메뉴 추천",
+    page_icon="🥗",
     layout="wide",
 )
 
@@ -60,12 +60,13 @@ st.markdown(
     }
 
     .panel {
-        background: rgba(255, 255, 255, 0.88);
+        background: rgba(255, 255, 255, 0.9);
         border: 1px solid rgba(220, 238, 224, 0.95);
         border-radius: 26px;
         padding: 1.45rem;
         box-shadow: 0 12px 34px rgba(30, 85, 45, 0.08);
         height: 100%;
+        margin-bottom: 0.6rem;
     }
 
     .panel-title {
@@ -78,7 +79,7 @@ st.markdown(
     .panel-desc {
         font-size: 0.92rem;
         color: #647067;
-        margin-bottom: 1rem;
+        margin-bottom: 0.3rem;
         line-height: 1.55;
     }
 
@@ -125,6 +126,7 @@ st.markdown(
         padding: 1.25rem;
         text-align: center;
         box-shadow: 0 14px 32px rgba(20, 83, 45, 0.18);
+        height: 100%;
     }
 
     .score-number {
@@ -162,7 +164,7 @@ st.markdown(
         font-weight: 750;
     }
 
-    .course-card {
+    .menu-card {
         background: white;
         border: 1px solid #dceee0;
         border-radius: 26px;
@@ -171,16 +173,24 @@ st.markdown(
         min-height: 330px;
     }
 
-    .course-emoji {
+    .menu-emoji {
         font-size: 2.2rem;
         margin-bottom: 0.55rem;
     }
 
-    .course-title {
+    .menu-title {
         color: #14532d;
-        font-size: 1.35rem;
-        font-weight: 900;
-        margin-bottom: 0.7rem;
+        font-size: 1.08rem;
+        font-weight: 850;
+        margin-bottom: 0.35rem;
+    }
+
+    .menu-name {
+        color: #123524;
+        font-size: 1.4rem;
+        font-weight: 950;
+        margin-bottom: 0.8rem;
+        line-height: 1.35;
     }
 
     .menu-box {
@@ -189,7 +199,7 @@ st.markdown(
         border: 1px solid #dceee0;
         padding: 0.9rem;
         color: #26382c;
-        font-weight: 800;
+        font-weight: 750;
         line-height: 1.55;
         margin-bottom: 0.9rem;
     }
@@ -198,6 +208,35 @@ st.markdown(
         color: #637468;
         line-height: 1.65;
         font-size: 0.94rem;
+    }
+
+    .tip-card {
+        background: #ffffff;
+        border: 1px solid #dceee0;
+        border-radius: 22px;
+        padding: 1.2rem;
+        box-shadow: 0 10px 26px rgba(30, 85, 45, 0.07);
+        height: 100%;
+    }
+
+    .tip-title {
+        color: #14532d;
+        font-size: 1.1rem;
+        font-weight: 900;
+        margin-bottom: 0.45rem;
+    }
+
+    .tip-main {
+        color: #123524;
+        font-weight: 850;
+        font-size: 1.05rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .tip-desc {
+        color: #637468;
+        line-height: 1.55;
+        font-size: 0.93rem;
     }
 
     div.stButton > button:first-child {
@@ -230,10 +269,10 @@ st.markdown(
     """
     <div class="main-hero">
         <div class="hero-label">Streamlit + FastAPI + Docker + AWS EC2</div>
-        <div class="hero-title">🌿 오늘의 식후 코스</div>
+        <div class="hero-title">🥗 오늘의 메뉴 추천</div>
         <div class="hero-subtitle">
-            식사 유형, 건강 목표, 디저트 취향, 허기짐 정도를 바탕으로
-            식사부터 디저트, 식후 루틴까지 한 번에 추천하는 맞춤형 코스 추천 서비스입니다.
+            식사 유형, 건강 목표, 허기짐 정도, 동행 상황을 바탕으로
+            오늘 먹기 좋은 식사 메뉴를 추천하는 웹 애플리케이션입니다.
         </div>
     </div>
     """,
@@ -247,7 +286,7 @@ with input_col1:
     st.markdown(
         """
         <div class="panel">
-            <div class="panel-title">🍚 식사 취향</div>
+            <div class="panel-title">🍚 식사 조건</div>
             <div class="panel-desc">
                 오늘 먹고 싶은 식사 유형과 건강 목표를 선택하세요.
             </div>
@@ -276,18 +315,13 @@ with input_col2:
     st.markdown(
         """
         <div class="panel">
-            <div class="panel-title">☕ 식후 취향</div>
+            <div class="panel-title">✨ 상황 조건</div>
             <div class="panel-desc">
-                디저트, 동행, 분위기, 산책 시간을 선택하세요.
+                함께 먹는 사람, 원하는 분위기, 식후 취향을 선택하세요.
             </div>
         </div>
         """,
         unsafe_allow_html=True,
-    )
-
-    dessert_type = st.selectbox(
-        "선호하는 디저트 유형",
-        ["커피", "베이커리", "저당 음료", "아이스크림", "과일/요거트"]
     )
 
     companion = st.selectbox(
@@ -300,15 +334,20 @@ with input_col2:
         ["조용한 곳", "가성비 좋은 곳", "사진 찍기 좋은 곳", "든든한 한 끼", "건강한 느낌", "편하게 오래 머물 수 있는 곳"]
     )
 
+    dessert_type = st.selectbox(
+        "식후 디저트 취향",
+        ["커피", "베이커리", "저당 음료", "아이스크림", "과일/요거트"]
+    )
+
     walk_time = st.selectbox(
-        "식사 후 산책 가능시간",
+        "식후 움직임 가능 시간",
         ["0분", "10분", "20분", "30분 이상"]
     )
 
 
 st.markdown("")
 
-recommend_button = st.button("🌿 오늘의 식후 코스 추천받기", use_container_width=True)
+recommend_button = st.button("🥗 오늘의 메뉴 추천받기", use_container_width=True)
 
 
 if recommend_button:
@@ -332,9 +371,9 @@ if recommend_button:
             st.markdown(
                 f"""
                 <div class="result-hero">
-                    <div class="result-badge">{result['course_badge']}</div>
-                    <div class="result-title">{result['course_title']}</div>
-                    <div class="result-summary">{result['course_summary']}</div>
+                    <div class="result-badge">{result['recommendation_badge']}</div>
+                    <div class="result-title">{result['recommendation_title']}</div>
+                    <div class="result-summary">{result['recommendation_summary']}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -347,7 +386,7 @@ if recommend_button:
                     f"""
                     <div class="score-card">
                         <div class="score-number">{result['recommendation_score']}점</div>
-                        <div class="score-label">오늘의 코스 적합도</div>
+                        <div class="score-label">메뉴 적합도</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -357,7 +396,7 @@ if recommend_button:
                 st.markdown(
                     """
                     <div class="flow-card">
-                        🍚 식사 &nbsp; → &nbsp; ☕ 디저트 &nbsp; → &nbsp; 🌿 식후 루틴
+                        🍚 메인 메뉴 &nbsp; | &nbsp; 🥗 대체 메뉴 &nbsp; | &nbsp; 🥪 가벼운 메뉴
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -371,32 +410,33 @@ if recommend_button:
                 <div>
                     <span class="chip">🍚 {summary['meal_type']}</span>
                     <span class="chip">🎯 {summary['health_goal']}</span>
-                    <span class="chip">☕ {summary['dessert_type']}</span>
                     <span class="chip">🔥 {summary['hunger_level']}</span>
                     <span class="chip">👥 {summary['companion']}</span>
                     <span class="chip">✨ {summary['mood']}</span>
+                    <span class="chip">☕ {summary['dessert_type']}</span>
                     <span class="chip">🌿 {summary['walk_time']}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            st.markdown("### 추천 결과")
+            st.markdown("### 추천 메뉴")
 
-            restaurant = result["restaurant"]
-            cafe = result["cafe"]
-            walk = result["walk"]
+            main_menu = result["main_menu"]
+            alternative_menu = result["alternative_menu"]
+            light_menu = result["light_menu"]
 
             card1, card2, card3 = st.columns(3, gap="medium")
 
             with card1:
                 st.markdown(
                     f"""
-                    <div class="course-card">
-                        <div class="course-emoji">{restaurant['emoji']}</div>
-                        <div class="course-title">{restaurant['title']}</div>
-                        <div class="menu-box">{restaurant['menu']}</div>
-                        <div class="reason-text">{restaurant['reason']}</div>
+                    <div class="menu-card">
+                        <div class="menu-emoji">{main_menu['emoji']}</div>
+                        <div class="menu-title">{main_menu['title']}</div>
+                        <div class="menu-name">{main_menu['name']}</div>
+                        <div class="menu-box">{main_menu['description']}</div>
+                        <div class="reason-text">{main_menu['reason']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -405,11 +445,11 @@ if recommend_button:
             with card2:
                 st.markdown(
                     f"""
-                    <div class="course-card">
-                        <div class="course-emoji">{cafe['emoji']}</div>
-                        <div class="course-title">{cafe['title']}</div>
-                        <div class="menu-box">{cafe['menu']}</div>
-                        <div class="reason-text">{cafe['reason']}</div>
+                    <div class="menu-card">
+                        <div class="menu-emoji">{alternative_menu['emoji']}</div>
+                        <div class="menu-title">{alternative_menu['title']}</div>
+                        <div class="menu-name">{alternative_menu['name']}</div>
+                        <div class="menu-box">{alternative_menu['description']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -418,11 +458,42 @@ if recommend_button:
             with card3:
                 st.markdown(
                     f"""
-                    <div class="course-card">
-                        <div class="course-emoji">{walk['emoji']}</div>
-                        <div class="course-title">{walk['title']}</div>
-                        <div class="menu-box">{walk['activity']}</div>
-                        <div class="reason-text">{walk['reason']}</div>
+                    <div class="menu-card">
+                        <div class="menu-emoji">{light_menu['emoji']}</div>
+                        <div class="menu-title">{light_menu['title']}</div>
+                        <div class="menu-name">{light_menu['name']}</div>
+                        <div class="menu-box">{light_menu['description']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("### 식후 참고 추천")
+
+            dessert_tip = result["dessert_tip"]
+            after_meal_tip = result["after_meal_tip"]
+
+            tip_col1, tip_col2 = st.columns(2, gap="medium")
+
+            with tip_col1:
+                st.markdown(
+                    f"""
+                    <div class="tip-card">
+                        <div class="tip-title">☕ {dessert_tip['title']}</div>
+                        <div class="tip-main">{dessert_tip['recommendation']}</div>
+                        <div class="tip-desc">{dessert_tip['reason']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with tip_col2:
+                st.markdown(
+                    f"""
+                    <div class="tip-card">
+                        <div class="tip-title">🌿 {after_meal_tip['title']}</div>
+                        <div class="tip-main">{after_meal_tip['activity']}</div>
+                        <div class="tip-desc">{after_meal_tip['reason']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -449,4 +520,4 @@ if recommend_button:
 
 
 st.markdown("---")
-st.caption("본 서비스는 Streamlit 프론트엔드와 FastAPI 백엔드가 HTTP 통신으로 연결된 추천 웹 애플리케이션입니다.")
+st.caption("본 서비스는 Streamlit 프론트엔드와 FastAPI 백엔드가 HTTP 통신으로 연결된 메뉴 추천 웹 애플리케이션입니다.")
